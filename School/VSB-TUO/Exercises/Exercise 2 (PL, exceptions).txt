@@ -1,0 +1,89 @@
+ -- Create stored procedure
+
+CREATE TABLE Teacher (
+  login char(6) NOT NULL PRIMARY KEY,
+  fname varchar2(30) NOT NULL;
+  lname varchar2(50) NOT NULL;
+  department INT NOT NULL;
+  specialization varchar2(30) NULL;
+
+CREATE OR REPLACE PROCEDURE StudentBecomeTeacher(
+  p_login IN Teacher.login%TYPE,
+  p_department IN Teacher.department%TYPE)
+AS BEGIN
+  
+END;
+
+
+
+  -- Create function with exception
+
+CREATE OR REPLACE FUNCTION FAddStudent(
+  p_login IN Student.login%TYPE,
+  p_fname IN Student.fname%TYPE,
+  p_lname IN Student.lname%TYPE,
+  p_tallness IN Student.tallness%TYPE)
+  RETURN varchar2 AS
+BEGIN
+  INSERT INTO Student (login, fname, lname, tallness)
+    VALUES (p_login, p_fname, p_lname, p_tallness);
+  COMMIT;
+  return 'It worked!';
+  EXCEPTION WHEN OTHERS THEN
+    return 'It did not work!';
+    ROLLBACK;
+END;
+
+EXECUTE dbms_output.put_line(FAddStudent('gah35', 'Dave', 'Gahan', 165));
+
+
+  -- Create and execute a stored procedure
+
+CREATE OR REPLACE PROCEDURE AddStudent(
+  p_login IN Student.login%TYPE,
+  p_fname IN Student.fname%TYPE,
+  p_lname IN Student.lname%TYPE,
+  p_tallness IN Student.tallness%TYPE)
+AS
+BEGIN
+  INSERT INTO Student (login, fname, lname, tallness)
+    VALUES (p_login, p_fname, p_lname, p_tallness);
+END;
+
+EXECUTE AddStudent('gah35', 'Dave', 'Gahan', 165);
+
+
+  -- Insert with exception
+  
+BEGIN
+  INSERT INTO Student (login, fname, lname, email, tallness)
+  VALUES ('lis067', 'Dave', 'Lister', 'smeghead@jmc.com', 170);
+  INSERT INTO Student (login, fname, lname, email, tallness)
+  VALUES ('lis048', 'Arnold', 'Rimmer', 'acerimmer@jmc.com', 178);
+  COMMIT;
+  EXCEPTION WHEN OTHERS THEN
+    ROLLBACK;
+END;
+  
+
+
+  -- Insert into table
+
+DECLARE
+  v_login Student.login%TYPE;
+  v_fname Student.fname%TYPE;
+  v_lname Student.lname%TYPE;
+  v_email Student.email%TYPE;
+  v_tallness Student.tallness%TYPE;
+
+BEGIN
+  v_login := 'sag04';
+  v_fname := 'Carl';
+  v_lname := 'Sagan';
+  v_email := 'carlthesage@cornell.com';
+  v_tallness := '168';
+  
+  INSERT INTO Student (login, fname, lname, email, tallness)
+  VALUES (v_login, v_fname, v_lname, v_email, v_tallness);
+  dbms_output.put_line('Student ' || v_fname || ' ' || v_lname || ' was successfully inserted');
+END;

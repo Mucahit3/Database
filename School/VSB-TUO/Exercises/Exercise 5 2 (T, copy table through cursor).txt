@@ -1,0 +1,34 @@
+########## Copy a table through a cursor
+
+ALTER PROCEDURE CopyTableStructure (@p_table_name VARCHAR(50), @p_table_catalog VARCHAR(50))
+AS BEGIN
+	DECLARE attributes CURSOR FOR
+	SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+	FROM INFORMATION_SCHEMA.COLUMNS
+	WHERE TABLE_CATALOG = @p_table_catalog AND TABLE_NAME = 'Student';
+	
+	DECLARE @v_command NVARCHAR(1000);
+	DECLARE @colname VARCHAR(50);
+	DECLARE @datatype VARCHAR(50);
+	DECLARE @charlength INTEGER;
+	DECLARE @index INTEGER;
+	SET @index = 0;
+	
+	SET @v_command = 'CREATE TABLE ' + @p_table_name + '_old (';
+
+	OPEN attributes;
+	FETCH NEXT FROM attributes INTO @colname, @datatype, @charlength;
+	WHILE @@FETCH_STATUS  = 0 BEGIN
+		SET @v_command = @v_command + @colname + ' ' + @datatype;
+		SET @v_command = @v_command + '(' + @charlength + ') ,';
+		FETCH NEXT FROM attributes INTO @colname, @datatype, @charlength;
+	END
+	CLOSE attributes; DEALLOCATE attributes;
+
+	SET @v_command = SUBSTRING(@v_command, 1, LEN(@v_command) - 1);
+	SET @v_command = @v_command + ')';
+END
+
+
+
+########## 

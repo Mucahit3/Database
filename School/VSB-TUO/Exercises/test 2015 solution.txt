@@ -1,0 +1,116 @@
+0******************************************* PL/SQL *******************************************
+-- Task 1 -----------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE PrintWorstDistributors(p_storeId INT) AS
+  v_currentDate DATE;
+BEGIN
+  v_currentDate := CURRENT_DATE;
+
+  FOR v_record IN
+  (
+    SELECT T.distributorId, T.name, T.corruptCountSum  
+    FROM
+      (
+        SELECT Distributor.distributorId, Distributor.name, SUM(Delivery.corruptCount) AS corruptCountSum
+        FROM Distributor JOIN Delivery ON Distributor.distributorId = Delivery.distributorId
+        WHERE Delivery.storeId = p_storeId AND v_currentDate - "date" < 60 /* last 60 days */
+        GROUP BY Distributor.distributorId, Distributor.name
+        ORDER BY corruptCountSum DESC
+      ) T
+    WHERE ROWNUM <= 10
+    ORDER BY T.corruptCountSum
+  )
+  LOOP
+    dbms_output.put_line(v_record.distributorId || ', ' || v_record.name || ', ' || v_record.corruptCountSum);
+  END LOOP;
+END;
+
+CREATE OR REPLACE PROCEDURE PrintWorstDistributors(p_storeId INT) AS
+  v_currentDate DATE;
+  v_dateFrom DATE;
+BEGIN
+  v_currentDate := CURRENT_DATE;
+  v_dateFrom := ADD_MONTHS(v_currentDate - EXTRACT(DAY FROM v_currentDate) + 1, -1);
+  /*This or last month*/
+
+  FOR v_record IN
+  (
+    SELECT T.distributorId, T.name, T.corruptCountSum  
+    FROM
+      (
+        SELECT Distributor.distributorId, Distributor.name, SUM(Delivery.corruptCount) AS corruptCountSum
+        FROM Distributor JOIN Delivery ON Distributor.distributorId = Delivery.distributorId
+        WHERE Delivery.storeId = p_storeId AND "date" >= v_dateFrom
+        GROUP BY Distributor.distributorId, Distributor.name
+        ORDER BY corruptCountSum DESC
+      ) T
+    WHERE ROWNUM <= 10
+    ORDER BY T.corruptCountSum
+  )
+  LOOP
+    dbms_output.put_line(v_record.distributorId || ', ' || v_record.name || ', ' || v_record.corruptCountSum);
+  END LOOP;
+END;
+
+-- Task 2 -----------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE MonthlyReport(v_sum OUT INT, v_employeeId INT) AS
+  v_currentDate DATE;
+  v_currentYear INT;
+  v_currentMonth INT;
+BEGIN
+  v_currentDate := CURRENT_DATE;
+  v_currentMonth := EXTRACT(MONTH FROM v_currentDate);
+  v_currentYear := EXTRACT(YEAR FROM v_currentDate);
+  
+  SELECT SUM("cost") INTO v_sum
+  FROM Invoice
+  WHERE
+    employeeId = v_employeeId AND
+    EXTRACT(MONTH FROM "date") = v_currentMonth AND
+    EXTRACT(YEAR FROM "date") = v_currentYear;
+END;
+
+******************************************* T-SQL *******************************************
+-- Task 1 -----------------------------------------------------------------------------------------------------
+CREATE /*ALTER*/ PROCEDURE PrintWorstDistributors
+    @storeID int
+AS
+  DECLARE @fromDate DATE,
+	@toDate DATE,
+	@distId INT,
+	@distName VARCHAR(10),
+	@distCorruptCount INT
+BEGIN
+  SET @fromDate = CONVERT(DATETIME,'1/' + cast((MONTH(GetDate()) - 2) as varchar(2)) + '/' + cast(YEAR(GetDate()) as varchar(4)),103);
+  SET @toDate = CONVERT(DATETIME,'1/' + cast((MONTH(GetDate())) as varchar(2)) + '/' + cast(YEAR(GetDate()) as varchar(4)),103);
+  declare vypis cursor for 
+    SELECT TOP (10) Distributor.distributorId, Distributor.name, SUM(Delivery.corruptCount) AS CorruptCountSum FROM Distributor
+    INNER JOIN Delivery ON Distributor.distributorId = Delivery.distributorId 
+    WHERE Delivery.storeId = @storeID AND Delivery.date >= @fromDate AND Delivery.date < @toDate
+    GROUP BY Distributor.distributorId, Distributor.name
+    ORDER BY CorruptCountSum DESC;
+    
+  	open vypis
+		fetch next from vypis into @distId, @distName, @distCorruptCount
+		while @@FETCH_STATUS = 0
+		begin
+			print CAST(@distId AS VARCHAR(5)) + '  |  ' + @distName + '  |  ' + CAST(@distCorruptCount AS VARCHAR(5));
+			fetch next from vypis into @distId, @distName, @distCorruptCount
+		end
+		close vypis
+		deallocate vypis
+  
+END;
+exec VypisNejhorsiDistrib 2
+
+-- Task 2 -----------------------------------------------------------------------------------------------------
+DROP PROCEDURE MesicniUzaverka;
+CREATE PROCEDURE MonthlyReport
+    @sum INT OUTPUT, 
+    @employeeId INT
+AS
+DECLARE @fromDate DATE
+BEGIN  
+  SET @fromDate = CONVERT(DATETIME,'1/' + MONTH(GetDate()) + '/' + YEAR(GetDate()),103);
+  SELECT @sum = SUM(cost) FROM Invoice WHERE
+    employeeId = employeeId AND date >= @fromDate;
+END;

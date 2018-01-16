@@ -1,0 +1,131 @@
+######### SIXTH PART - Functions
+
+CREATE OR REPLACE FUNCTION ()
+  return TYPE
+AS BEGIN
+  return;
+END;
+
+
+
+######### FIFTH PART - Cursors
+
+CREATE OR REPLACE PROCEDURE PrintStudents
+  AS
+  CURSOR c IS SELECT * from Student;
+  r_row Student%ROWTYPE;
+  
+BEGIN
+  FOR v_row IN c LOOP
+    dbms_output.put_line('Student with login ' || v_row.login || ' has name ' || v_row.name || ' and surname ' || v_row.surname);
+  END LOOP;
+END;
+
+EXECUTE PrintStudents();
+
+
+
+######### FOURTH PART - Cycles (for loop)
+
+CREATE OR REPLACE PROCEDURE InsertTenStudents
+  AS
+  v_login Student.login%TYPE;
+  
+BEGIN
+  FOR i IN 1..10 LOOP
+    IF i < 10 THEN
+      v_login := 'aaa0' || i;
+    ELSE
+      v_login := 'aaa' || i;
+    END IF;
+    INSERT INTO Student VALUES (v_login, 'bbb', 'ccc');
+  END LOOP;
+  COMMIT;
+  dbms_output.put_line('10 students successfully inserted');
+  EXCEPTION WHEN OTHERS THEN
+    dbms_output.put_line('Insertion failed');
+    ROLLBACK;
+END;
+
+EXECUTE InsertTenStudents();
+
+
+
+######### THIRD PART - Procedure with an argument + if/else statement
+
+CREATE OR REPLACE PROCEDURE MoveStudent(p_login Teacher.login%TYPE)
+  AS
+  v_student Student%ROWTYPE;
+  
+BEGIN
+  IF p_login = 'RAS0012' THEN
+    dbms_output.put_line('Zadneho pana rasku tu nechceme');
+  ELSE
+    SELECT * INTO v_student FROM Student WHERE login = p_login;
+    INSERT INTO Teacher VALUES (v_student.login, v_student.name, v_student.surname);
+    DELETE FROM Student WHERE login = p_login;
+    COMMIT;
+    dbms_output.put_line(p_login || ' successfully moved');
+  END IF;
+    EXCEPTION WHEN OTHERS THEN
+      dbms_output.put_line('Failed moving ' || p_login);
+      ROLLBACK;
+END;
+
+EXECUTE MoveStudent('RAS0012');
+
+
+
+######### SECOND PART - Using a procedure
+
+CREATE OR REPLACE PROCEDURE MoveStudent
+  AS
+  v_login Student.login%TYPE;
+  v_student Student%ROWTYPE;
+  
+BEGIN
+  SELECT * INTO v_student FROM Student WHERE login = v_login;
+  INSERT INTO Teacher VALUES (v_student.login, v_student.name, v_student.surname);
+  DELETE FROM Student WHERE login = v_login;
+  COMMIT;
+  dbms_output.put_line(v_login || ' successfully moved');
+  EXCEPTION WHEN OTHERS THEN
+    dbms_output.put_line('Failed moving ' || v_login);
+    ROLLBACK;
+END;
+
+
+
+######### FIRST PART - Creating tables, moving row between tables
+
+CREATE TABLE Student(
+login char(5) PRIMARY KEY,
+name varchar(30) NOT NULL,
+surname varchar(30) NOT NULL)
+
+CREATE TABLE Teacher(
+login char(5) PRIMARY KEY,
+name varchar(30) NOT NULL,
+surname varchar(30) NOT NULL)
+
+INSERT INTO Student(login, name, surname) values ("RAS0012","Dominik","smažka");
+
+SET SERVEROUTPUT on
+
+
+DELETE FROM Teacher WHERE login = 'RAS0012';
+
+DECLARE
+  v_login Student.login%TYPE;
+  v_student Student%ROWTYPE;
+  
+BEGIN
+  SELECT * INTO v_student FROM Student WHERE login = v_login;
+  INSERT INTO Teacher VALUES (v_student.login, v_student.name, v_student.surname);
+  DELETE FROM Student WHERE login = v_login;
+  COMMIT;
+  dbms_output.put_line(v_login || ' successfully moved');
+  EXCEPTION WHEN OTHERS THEN
+    dbms_output.put_line('Failed moving ' || v_login);
+    ROLLBACK;
+END;

@@ -1,0 +1,33 @@
+ALTER PROCEDURE PrintWorstDistributors
+AS BEGIN
+	DECLARE cur CURSOR FOR
+	SELECT TOP 5 di.distributorId, di.name, SUM(de.corruptCount) AS count FROM Delivery de RIGHT JOIN Distributor di ON di.distributorId = de.distributorId WHERE date > DATEADD(year, -4, GETDATE()) GROUP BY di.distributorId, di.name ORDER BY SUM(de.corruptCount) DESC;
+	DECLARE @id INT, @count INT, @name VARCHAR(50), @spacing VARCHAR(10);
+	SET @spacing = space(10);
+
+	OPEN cur;
+	FETCH NEXT FROM cur INTO @id, @name, @count;
+	print LEFT('COUNT' + @spacing, 10) + LEFT('ID' + @spacing, 10) + 'Name';
+	WHILE (@@FETCH_STATUS=0) BEGIN
+		print LEFT(CAST(@count AS VARCHAR(10)) + @spacing, 10) + LEFT(CAST(@id AS VARCHAR(10)) + @spacing, 10) + @name;
+		FETCH NEXT FROM cur INTO @id, @name, @count;
+	END;
+	CLOSE cur;
+	DEALLOCATE cur;	
+END;
+
+EXEC PrintWorstDistributors
+
+
+ALTER PROCEDURE MonthlyReport (@sum INTEGER OUTPUT, @employeeId INTEGER)
+AS BEGIN
+	SELECT @sum = SUM(cost) FROM Invoice WHERE EmployeeId = @employeeId AND MONTH(date) = MONTH(SYSDATETIME()) GROUP BY EmployeeId;
+	print MONTH(SYSDATETIME());
+END;
+	
+BEGIN
+	DECLARE @sum INT;
+	SET @sum = 5;
+	EXEC MonthlyReport @sum OUTPUT, 1;
+	print @sum;
+END;

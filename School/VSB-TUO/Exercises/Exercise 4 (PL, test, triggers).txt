@@ -1,0 +1,75 @@
+########## TEST (UNFINISHED)
+
+SET SERVEROUTPUT on
+
+CREATE TABLE GameScore(
+idLeague NUMERIC NOT NULL,
+idSeason NUMERIC NOT NULL,
+game_order NUMERIC NOT NULL,
+score_home NUMERIC NOT NULL,
+score_visitors NUMERIC NOT NULL,
+PRIMARY KEY (idLeague, idSeason));
+
+CREATE OR REPLACE PROCEDURE GameScore(
+  p_league LEAGUE.leaguename%TYPE,
+  p_season SEASON.seasonname%TYPE,
+  p_order GAME.game_order%TYPE)
+AS
+  v_score NUMERIC; v_score2 NUMERIC;
+  v_idLeague NUMERIC; v_idSeason NUMERIC; v_gameOrder NUMERIC;
+BEGIN
+  SELECT SUM(scoreHome) INTO v_score FROM GAME WHERE game_order = p_order;
+  SELECT SUM(scoreVisitor) INTO v_score2 FROM GAME WHERE game_order = p_order;
+  SELECT idLeague INTO v_idLeague FROM League WHERE leagueName = p_league;
+  SELECT idSeason INTO v_idSeason FROM Season WHERE idseasonName = p_season;
+  SELECT game_order INTO v_gameOrder FROM Game WHERE game_order = p_order;
+  INSERT INTO GameHome VALUES ()
+END;
+
+
+
+########## TRIGGGERS
+
+CREATE OR REPLACE TRIGGER CopyStudent
+  BEFORE INSERT ON StudentsMATH
+  FOR EACH ROW
+BEGIN
+  INSERT INTO StudentsDS VALUES (:new.login, :new.name, :new.surname);
+END;
+
+
+
+########## Insert into a specified table
+
+CREATE TABLE StudentsMATH(
+login char(7) PRIMARY KEY,
+name varchar(50) NOT NULL,
+surname varchar(50) NOT NULL);
+
+CREATE TABLE StudentsDS(
+login char(7) PRIMARY KEY,
+name varchar(50) NOT NULL,
+surname varchar(50) NOT NULL);
+
+
+SET SERVEROUTPUT on
+
+CREATE OR REPLACE PROCEDURE InsertStudent(
+  p_table varchar,
+  p_login StudentsMATH.login%TYPE,
+  p_name StudentsMATH.name%TYPE,
+  p_surname StudentsMATH.surname%TYPE)
+AS
+  v_command varchar2(100);
+BEGIN
+  v_command := 'INSERT INTO ' || p_table || ' VALUES (''' || p_login || ''', ''' || p_name || ''', ''' || p_surname || ''')';
+  dbms_output.put_line('Command: ' || v_command);
+  EXECUTE IMMEDIATE v_command;
+  COMMIT;
+  dbms_output.put_line('Student ' || p_login || ' was inserted');
+  EXCEPTION WHEN OTHERS THEN
+    dbms_output.put_line('Student ' || p_login || ' was not inserted');
+    ROLLBACK;
+END;
+
+EXECUTE InsertStudent('StudentsMATH', 'FIS0049', 'Jiri', 'Fiser');
